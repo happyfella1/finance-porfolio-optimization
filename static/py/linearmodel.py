@@ -1,8 +1,8 @@
 from gurobipy import *
 
 import pandas as pd
-import pandas.io.data as pull
-
+#import pandas.io.data as pull
+import pandas_datareader.data as pull
 import numpy as np
 
 from datetime import datetime
@@ -163,6 +163,7 @@ def getData():
 def pullDataFromYahoo(symbol, startdate, enddate):
     dates = pd.DatetimeIndex(start=startdate, end=enddate, freq='1d')
     data = pd.DataFrame(index=dates)
+
 
     try:
         tmp = pull.DataReader(symbol, 'yahoo',

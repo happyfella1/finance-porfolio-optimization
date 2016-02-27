@@ -15,9 +15,10 @@ def _index():
 
 @app.route('/_pull', methods=['POST'])
 def _pullData():
-    symbol = request.form["symbol"]
+    symbol = request.form["symbol"].strip()
     startdate = datetime.strptime(request.form["startdate"], "%Y-%m-%d").date()
     enddate = datetime.strptime(request.form["enddate"], "%Y-%m-%d").date()
+
     return pullDataFromYahoo(symbol, startdate, enddate)
     
 @app.route('/_fit', methods=['POST'])
