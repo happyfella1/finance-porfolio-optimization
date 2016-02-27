@@ -6,7 +6,6 @@ import pandas.io.data as pull
 import numpy as np
 
 from datetime import datetime
-from cvxopt import matrix, solvers, sparse
 from flask import jsonify, request
 
 def getConstraints(k, short, df):
