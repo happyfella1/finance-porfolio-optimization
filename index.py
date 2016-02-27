@@ -2,7 +2,6 @@
 import numpy as np
 import pandas as pd
 
-from cvxopt import solvers
 from datetime import datetime
 from flask import Flask, render_template, request
 
@@ -48,5 +47,4 @@ def _rebalancing():
     return getRebalance(df, freq, pos)
     
 if __name__ == '__main__':
-    solvers.options['show_progress'] = False
     app.run(debug=True,port=12345)
