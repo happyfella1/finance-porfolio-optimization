@@ -98,12 +98,14 @@ def getFrontier(df, short):
     sigma = df.cov()
     stats = pd.concat((df.mean(),df.std(),(df+1).prod()-1),axis=1)
     stats.columns = ['Mean_return', 'Volatility', 'Total_return']
+
+    extremes = pd.concat((stats.idxmin(),stats.min(),stats.idxmax(),stats.max()),axis=1)
+    extremes.columns = ['Minimizer','Minimum','Maximizer','Maximum']
     growth = (df+1.0).cumprod()
     tx = growth.index
     syms = growth.columns
     # Instantiate our model
     m = Model("portfolio")
-    m.setParam('OutputFlag',False)
 
     # Create one variable for each stock
     portvars = [m.addVar(name=symb,lb=0.0) for symb in syms]
@@ -128,15 +130,26 @@ def getFrontier(df, short):
     m.setParam('Method',1)
 
     target = np.arange(1, (2 * np.max(ret) - np.min(ret)) if short else np.max(ret), 0.002)
-    print type(target)
     frontier = {}
+    fixedreturn = m.addConstr(p_return, GRB.EQUAL, 5)
+
+    # Determine the range of returns. Make sure to include the lowest-risk
+    # portfolio in the list of options
+    minret = extremes.loc['Mean_return','Minimum']
+    maxret = extremes.loc['Mean_return','Maximum']
+    riskret = extremes.loc['Volatility','Minimizer']
+    riskret = stats.loc[riskret,'Mean_return']
+    returns = np.unique(np.hstack((np.linspace(minret,maxret,100),riskret)))
+
+    # Iterate through all returns
+    risks = returns.copy()
     for i, alpha in enumerate(target):
-        b = matrix([1, alpha])
+        fixedreturn.rhs = returns[i]
         m.optimize()
-        pos = np.array(portvars.apply(lambda x:x.getAttr('x')).as_matrix()).ravel()[:k]
+        pos = portvars.apply(lambda x:x.getAttr('x')).as_matrix()
+        print(pos)
         frontier[i] = { "ret": (alpha ** ( 365 / T ) - 1) * 100,
                         "vol": np.sqrt(pos.dot(vol).dot(pos)) * np.sqrt( 365 / T ) * 100 }
-    print(frontier)
     return jsonify(frontier)
 
 def getData():
