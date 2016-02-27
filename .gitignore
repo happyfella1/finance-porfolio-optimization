@@ -1,0 +1,7 @@
+# Intellij
+.idea/
+*.iml
+*.iws
+
+# gurobi log file
+gurobi.log

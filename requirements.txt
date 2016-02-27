@@ -1,0 +1,4 @@
+Flask==0.10.1
+numpy==1.9.2
+pandas==0.16.2
+gurobi==6.5.0
