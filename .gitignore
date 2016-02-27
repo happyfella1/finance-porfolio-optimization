@@ -5,3 +5,6 @@
 
 # gurobi log file
 gurobi.log
+
+# pyc files
+*.pyc
