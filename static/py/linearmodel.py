@@ -45,6 +45,7 @@ def getPortfolio(df, unused, lbd, short=False, l2=0):
     # The (squared) volatility of the portfolio
     p_risk = sigma.dot(portvars).dot(portvars)
 
+   
     m.setObjective(p_risk,GRB.MINIMIZE)
 
     # Fix the budget
@@ -130,9 +131,8 @@ def getFrontier(df, short):
 
     m.setParam('Method',1)
 
-    target = np.arange(1, (2 * np.max(ret) - np.min(ret)) if short else np.max(ret), 0.002)
     frontier = {}
-    fixedreturn = m.addConstr(p_return, GRB.EQUAL, 5)
+    fixedreturn = m.addConstr(p_return, GRB.EQUAL, 10)
     m.update()
 
     # Determine the range of returns. Make sure to include the lowest-risk
@@ -145,13 +145,12 @@ def getFrontier(df, short):
 
     # Iterate through all returns
     risks = returns.copy()
-    for i, alpha in enumerate(target):
+    for i, alpha in enumerate(returns):
         fixedreturn.rhs = returns[i]
         m.optimize()
         pos = portvars.apply(lambda x:x.getAttr('x')).as_matrix()
-        print(pos)
         frontier[i] = { "ret": returns[i],
-                        "vol": sqrt(p_risk.getValue()) }
+                        "vol": sqrt(p_risk.getValue())}
     return jsonify(frontier)
 
 def getData():
