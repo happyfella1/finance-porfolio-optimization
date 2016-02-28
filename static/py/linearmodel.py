@@ -4,6 +4,7 @@ import pandas as pd
 #import pandas.io.data as pull
 import pandas_datareader.data as pull
 import numpy as np
+from math import sqrt
 
 from datetime import datetime
 from flask import jsonify, request
@@ -29,7 +30,6 @@ def getPortfolio(df, unused, lbd, short=False, l2=0):
     syms = growth.columns
     # Instantiate our model
     m = Model("portfolio")
-    m.setParam('OutputFlag',False)
     # Create one variable for each stock
     portvars = [m.addVar(name=symb,lb=0.0) for symb in syms]
     portvars = pd.Series(portvars, index=syms)
@@ -106,6 +106,8 @@ def getFrontier(df, short):
     # Instantiate our model
     m = Model("portfolio")
 
+    m.setParam('OutputFlag',False)
+
     # Create one variable for each stock
     portvars = [m.addVar(name=symb,lb=0.0) for symb in syms]
     portvars = pd.Series(portvars, index=syms)
@@ -131,6 +133,7 @@ def getFrontier(df, short):
     target = np.arange(1, (2 * np.max(ret) - np.min(ret)) if short else np.max(ret), 0.002)
     frontier = {}
     fixedreturn = m.addConstr(p_return, GRB.EQUAL, 5)
+    m.update()
 
     # Determine the range of returns. Make sure to include the lowest-risk
     # portfolio in the list of options
@@ -147,8 +150,8 @@ def getFrontier(df, short):
         m.optimize()
         pos = portvars.apply(lambda x:x.getAttr('x')).as_matrix()
         print(pos)
-        frontier[i] = { "ret": (alpha ** ( 365 / T ) - 1) * 100,
-                        "vol": np.sqrt(pos.dot(vol).dot(pos)) * np.sqrt( 365 / T ) * 100 }
+        frontier[i] = { "ret": returns[i],
+                        "vol": sqrt(p_risk.getValue()) }
     return jsonify(frontier)
 
 def getData():
