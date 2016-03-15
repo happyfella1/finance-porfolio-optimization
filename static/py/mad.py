@@ -10,6 +10,8 @@ idata = pd.DataFrame.from_csv('./static/data/data491.csv')
 # set default amount to $1m, default risk = 13%, max percent in a instrument = 5%
 # transaction costs for stocks is $7 per unit
 def getPortfolio(df,unused,amount = 1000000,risk = 13, startDate ="2015-01-01" ,endDate ="2016-01-01",maxP = 5):
+    print(amount)
+    print maxP
     T, k = df.shape
     vol = np.cov((df.iloc[1:, :] / df.shift(1).iloc[1:, :]).T) * df.shape[0]
     ret = (np.array(df.tail(1)) / np.array(df.head(1))).ravel()
@@ -30,7 +32,7 @@ def getPortfolio(df,unused,amount = 1000000,risk = 13, startDate ="2015-01-01" ,
     portvars = [m.addVar(name=sym,lb=0.0) for sym in syms]
     portvars = pd.Series(portvars,index=syms)
     # Define new variables to implement Mean Absolute Deviation for risk calculation
-    print(timePeriods)
+
     timevars = [m.addVar(name=str(t),lb=0.0) for t in timePeriods]
     timevars = pd.Series(timevars,index=timePeriods)
 
@@ -43,13 +45,10 @@ def getPortfolio(df,unused,amount = 1000000,risk = 13, startDate ="2015-01-01" ,
 
 
     m.setObjective(p_return,GRB.MAXIMIZE)
-    print(timevars.sum())
     m.addConstr(p_total_port,GRB.EQUAL,amount)
     # MAD constraints
     m.addConstr(timevars.sum(),GRB.LESS_EQUAL,risk*amount*0.01/2)
-    print(timevars[2])
     for index, row in periodicMeans.iterrows():
-        print(index)
         m.addConstr(timevars[index],GRB.GREATER_EQUAL,(row-total_means).dot(portvars))
     for var in portvars:
         m.addConstr(var,GRB.LESS_EQUAL,amount/100*maxP)
@@ -75,10 +74,9 @@ def getPortfolio(df,unused,amount = 1000000,risk = 13, startDate ="2015-01-01" ,
     for i, p in enumerate(pos):
         allocation[category(p)].append({ "symbol": df.columns[i], "p": p })
 
+    allocation["ret"] = (ret.dot(pos) ** ( 365.0 / T ) - 1) * 100
 
-    allocation["ret"] = (ret.dot(pos) ** ( 365 / T ) - 1) * 100
-
-    allocation["vol"] = np.sqrt(pos.dot(vol).dot(pos)) * np.sqrt( 365 / T ) * 100
+    allocation["vol"] = np.sqrt(pos.dot(vol).dot(pos)) * np.sqrt( 365.0 / T ) * 100
     # allocation["status"] = sol["status"]
     allocation["status"] = "optimal"
     print(allocation)
@@ -270,7 +268,7 @@ def pullDataFromYahoo(symbol, startdate, enddate):
         dailyret = np.array(data["value"])
         dailyret = dailyret[1:] / dailyret[:-1]
         return jsonify({ "series": data.drop("index", 1).T.to_json(),
-                         "ret": (data["value"].iloc[-1] ** ( 365 / data["value"].size ) - 1) * 100,
+                         "ret": (data["value"].iloc[-1] ** ( 365.0 / data["value"].size ) - 1) * 100,
                          "vol": np.std(dailyret) * 1910.5 })
 
     except:
