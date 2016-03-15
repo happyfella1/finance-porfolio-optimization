@@ -159,7 +159,6 @@ $(function() {
     $("#Currency").click(function() {
         svgtrend.select("#line-Currency").style("visibility", this.checked ? "visible" : "hidden")
     })
-    https://www.youtube.com/watch?v=Zm8ISls_TBA
 
     $("#rebalancing")
         .change(function() {
@@ -185,6 +184,8 @@ $(function() {
                     $("input[type=text]").attr("disabled", "disabled");
                     $("input#rate").attr("disabled", "disabled");
                     $("input#shor").attr("disabled", "disabled");
+                    $("input#totinvest").attr("disabled", "disabled");
+                    $("input#maxinvest").attr("disabled", "disabled");
                     $("select#rebalancing").prop("disabled", false);
                     $("#quote").attr("value", "Fit");
                 } else {
