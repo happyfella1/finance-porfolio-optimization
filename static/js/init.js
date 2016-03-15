@@ -95,7 +95,7 @@ $(function() {
 $(function() {
     var date = new Date;
     $("#end-date").attr("value", $.datepicker.formatDate("mm/dd/yy", date));
-    date.setMonth(date.getMonth() - 3);
+    date.setMonth(date.getMonth() - 12);
     $("#start-date").attr("value", $.datepicker.formatDate("mm/dd/yy", date));
     $("#start-date").datepicker({
         dataFormat: "mm/dd/yy",
@@ -104,7 +104,7 @@ $(function() {
         maxDate: $("#start-date").attr("value"),
         onClose: function() {
             var date = $("#start-date").datepicker("getDate");
-            date.setMonth(date.getMonth() + 3);
+            date.setMonth(date.getMonth() + 12);
             $("#end-date").datepicker("option", "minDate", date);
         }
     });
@@ -116,7 +116,7 @@ $(function() {
         maxDate: new Date,
         onClose: function() {
             var date = $("#end-date").datepicker("getDate");
-            date.setMonth(date.getMonth() - 3);
+            date.setMonth(date.getMonth() - 12);
             $("#start-date").datepicker("option", "maxDate", date);
         }
     });
