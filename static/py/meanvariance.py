@@ -11,8 +11,8 @@ from flask import jsonify, request
 
 idata = pd.DataFrame.from_csv('./static/data/data491.csv')
 
-def getPortfolio(df, unused, lbd, short=False, l2=0):
-
+def getPortfolio1(df, unused, amount = 1000000,risk = 13, maxP = 5):
+    print("Using mean variance for risk calculations")
     T, k = df.shape
     vol = np.cov((df.iloc[1:, :] / df.shift(1).iloc[1:, :]).T) * df.shape[0]
     ret = (np.array(df.tail(1)) / np.array(df.head(1))).ravel()
@@ -42,11 +42,11 @@ def getPortfolio(df, unused, lbd, short=False, l2=0):
     p_risk = sigma.dot(portvars).dot(portvars)
 
 
-    amount = 1000000
     for portvar in portvars:
         m.addConstr(portvar, GRB.LESS_EQUAL, 0.05 *amount)
-    m.setObjective(p_risk,GRB.MINIMIZE)
+    m.setObjective(p_return,GRB.MAXIMIZE)
 
+    m.addConstr(p_risk,GRB.LESS_EQUAL, 0.01 * risk * amount )
     # m.addConstr(p_risk,GRB.LESS_EQUAL, 0.13 *amount)
     # Fix the budget
     m.addConstr(p_total, GRB.EQUAL, 1000000)
@@ -74,9 +74,9 @@ def getPortfolio(df, unused, lbd, short=False, l2=0):
         allocation[category(p)].append({ "symbol": df.columns[i], "p": p })
 
 
-    allocation["ret"] = (ret.dot(pos) ** ( 365 / T ) - 1) * 100
+    allocation["ret"] = (ret.dot(pos) ** ( 365.0 / T ) - 1) * 100
 
-    allocation["vol"] = np.sqrt(pos.dot(vol).dot(pos)) * np.sqrt( 365 / T ) * 100
+    allocation["vol"] = np.sqrt(pos.dot(vol).dot(pos)) * np.sqrt( 365.0 / T ) * 100
     # allocation["status"] = sol["status"]
     allocation["status"] = "optimal"
 
@@ -84,11 +84,11 @@ def getPortfolio(df, unused, lbd, short=False, l2=0):
 
 
 
-def getRebalance(df, freq, pos):
+def getRebalance1(df, freq, pos):
     return 0
 
 
-def getFrontier(df, short):
+def getFrontier1(df, short):
     T, k = df.shape
 
     vol = np.cov((df.iloc[1:, :] / df.shift(1).iloc[1:, :]).T) * df.shape[0]
@@ -152,7 +152,7 @@ def getFrontier(df, short):
                         "vol": sqrt(p_risk.getValue())}
     return jsonify(frontier)
 
-def getData():
+def getData1():
     raw = pd.read_json(request.form["data"])
     symbols = list(raw.columns)
     data = pd.DataFrame(columns=symbols)
@@ -161,7 +161,7 @@ def getData():
         data[symbol] = pd.Series(data=val, index=pd.DatetimeIndex(idx))
     return data
 
-def pullDataFromYahoo(symbol, startdate, enddate):
+def pullDataFromYahoo1(symbol, startdate, enddate):
     dates = pd.DatetimeIndex(start=startdate, end=enddate, freq='1d')
     data = pd.DataFrame(index=dates)
     try:
@@ -175,7 +175,7 @@ def pullDataFromYahoo(symbol, startdate, enddate):
         dailyret = np.array(data["value"])
         dailyret = dailyret[1:] / dailyret[:-1]
         return jsonify({ "series": data.drop("index", 1).T.to_json(),
-                         "ret": (data["value"].iloc[-1] ** ( 365 / data["value"].size ) - 1) * 100,
+                         "ret": (data["value"].iloc[-1] ** ( 365.0 / data["value"].size ) - 1) * 100,
                          "vol": np.std(dailyret) * 1910.5 })
 
     except:

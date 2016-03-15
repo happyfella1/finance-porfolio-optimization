@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import datetime
 from flask import Flask, render_template, request
 
-# from static.py.linearmodel import getData, getPortfolio, getFrontier, getRebalance, pullDataFromYahoo
+from static.py.meanvariance import getData1, getPortfolio1, getFrontier1, getRebalance1, pullDataFromYahoo1
 from static.py.mad import getData, getPortfolio, getFrontier, pullDataFromYahoo
 
 app = Flask(__name__, static_folder='static', static_url_path='')
@@ -27,12 +27,14 @@ def _fitModel():
     risk = float(request.form["risk"])
     totalAmount = float(request.form["totinvest"])
     maxinvest = float(request.form["maxinvest"])
-    print(totalAmount)
-    print(maxinvest)
+    model = int(request.form["model"])
+
     unused = filter(lambda s: len(s) > 0, request.form["unused"].split(","))
     data = getData()
-
-    return getPortfolio(data, unused, amount=totalAmount,risk=risk, maxP=maxinvest)
+    if model == 102:
+        return getPortfolio1(data, unused, amount=totalAmount,risk=risk, maxP=maxinvest)
+    else:
+        return getPortfolio(data, unused, amount=totalAmount,risk=risk, maxP=maxinvest)
 
 @app.route('/_frontier', methods=['POST'])
 def _fitFrontier():

@@ -10,7 +10,7 @@ idata = pd.DataFrame.from_csv('./static/data/data491.csv')
 # set default amount to $1m, default risk = 13%, max percent in a instrument = 5%
 # transaction costs for stocks is $7 per unit
 def getPortfolio(df,unused,amount = 1000000,risk = 13, maxP = 5):
-
+    print("Using mean absolute deviation for risk calculations")
     T, k = df.shape
     vol = np.cov((df.iloc[1:, :] / df.shift(1).iloc[1:, :]).T) * df.shape[0]
     ret = (np.array(df.tail(1)) / np.array(df.head(1))).ravel()
@@ -41,7 +41,11 @@ def getPortfolio(df,unused,amount = 1000000,risk = 13, maxP = 5):
     m.setObjective(p_return,GRB.MAXIMIZE)
     m.addConstr(p_total_port,GRB.EQUAL,amount)
     # MAD constraints
-    m.addConstr(timevars.sum(),GRB.LESS_EQUAL,risk*amount*0.01/2)
+    # w is the risk constant for mad, 35.2 % volatility = 2.89 % w =>  w = risk/ 35.2 * 2.89 (this value is deduced by comparing mean variance)
+    # w = risk * 2.89 / 35.2
+    w = risk
+
+    m.addConstr(timevars.sum(),GRB.LESS_EQUAL,w*amount*0.01/2)
     for index, row in periodicMeans.iterrows():
         m.addConstr(timevars[index],GRB.GREATER_EQUAL,(row-total_means).dot(portvars))
     for var in portvars:

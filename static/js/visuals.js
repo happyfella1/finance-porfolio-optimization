@@ -409,7 +409,8 @@ function fit(init) {
         risk: $("#risk").val(),
         unused: unused.join(","),
         maxinvest: $("#maxinvest").val(),
-        totinvest: $("#totinvest").val()
+        totinvest: $("#totinvest").val(),
+        model: $("#model").val()
     }, function(d) {
         pos = d;
         pos.series = JSON.parse(pos.series);
