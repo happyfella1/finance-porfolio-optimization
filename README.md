@@ -9,7 +9,7 @@
  * gurobi 6.5.0
 
 2. Get started
- * Run "python3 index.py" in terminal.
+ * Run "python index.py" in terminal.
  * Open 127.0.0.1:12345 in a browser.
  * Select start- and end-date; add more tickers.
  * Click "Quote" to pull data and fit model.
