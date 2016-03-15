@@ -9,12 +9,7 @@ from math import sqrt
 from datetime import datetime
 from flask import jsonify, request
 
-def getConstraints(k, short, df):
-
-    return 0
-
-
-
+idata = pd.DataFrame.from_csv('./static/data/data491.csv')
 
 def getPortfolio(df, unused, lbd, short=False, l2=0):
 
@@ -22,6 +17,7 @@ def getPortfolio(df, unused, lbd, short=False, l2=0):
     vol = np.cov((df.iloc[1:, :] / df.shift(1).iloc[1:, :]).T) * df.shape[0]
     ret = (np.array(df.tail(1)) / np.array(df.head(1))).ravel()
 
+    df = df.pct_change()[1:]
     sigma = df.cov()
     stats = pd.concat((df.mean(),df.std(),(df+1).prod()-1),axis=1)
     stats.columns = ['Mean_return', 'Volatility', 'Total_return']
@@ -45,13 +41,16 @@ def getPortfolio(df, unused, lbd, short=False, l2=0):
     # The (squared) volatility of the portfolio
     p_risk = sigma.dot(portvars).dot(portvars)
 
-   
+
+    amount = 1000000
+    for portvar in portvars:
+        m.addConstr(portvar, GRB.LESS_EQUAL, 0.05 *amount)
     m.setObjective(p_risk,GRB.MINIMIZE)
 
+    # m.addConstr(p_risk,GRB.LESS_EQUAL, 0.13 *amount)
     # Fix the budget
-    m.addConstr(p_total, GRB.EQUAL, 1)
+    m.addConstr(p_total, GRB.EQUAL, 1000000)
 
-    m.setParam('Method',1)
 
     m.optimize()
 
@@ -165,13 +164,10 @@ def getData():
 def pullDataFromYahoo(symbol, startdate, enddate):
     dates = pd.DatetimeIndex(start=startdate, end=enddate, freq='1d')
     data = pd.DataFrame(index=dates)
-
-
     try:
-        tmp = pull.DataReader(symbol, 'yahoo',
-                              startdate, enddate)
-        data["price"] = tmp["Close"]
-        data["value"] = tmp["Adj Close"]
+        tmp = idata[symbol][startdate:enddate]
+        tmp = tmp.to_frame()
+        data["value"] = tmp[symbol]
         data = data.interpolate().ffill().bfill()
         data["value"] /= data["value"][0]
         data = data.reset_index()
