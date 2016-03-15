@@ -12,22 +12,6 @@ function quote() {
             })
         .toArray();
 
-    data["Currency"] = {
-        series: [],
-        ret: parseFloat($("#rate").val()),
-        vol: 0
-    };
-    var v = 1;
-    var rate = Math.pow(1 + $("#rate").val() / 100, 0.0027);
-    for (var d = $("#start-date").datepicker("getDate"); d <= $("#end-date").datepicker("getDate"); d.setDate(d.getDate() + 1)) {
-        data["Currency"].series.push({
-            date: new Date(d.getTime()),
-            value: v
-        });
-        v *= rate;
-    }
-    data["Currency"].min = Math.min(1, v);
-    data["Currency"].max = Math.max(1, v);
 
     var quotes = symbols.map(function(symbol) {
         return $.post("_pull", {
@@ -69,7 +53,6 @@ function quote() {
 
     $.when.apply(null, quotes).done(function() {
         d3.select("#progress").text("Processing data...");
-        symbols.push("Currency");
         if (symbols.length < 21)
             colors = (symbols.length < 11) ? d3.scale.category10() : d3.scale.category20();
         else {
@@ -208,68 +191,6 @@ function trendPlot() {
         });
     //copy
 
-    var gpie2 = svgpie2.selectAll(".arc")
-        .data(pie2(symbols.map(function(s) {
-            return {
-                symbol: s,
-                p: 1
-            };
-        })), function(d) {
-            return d.data.symbol;
-        })
-        .enter().append("g")
-        .attr("class", "arc")
-        .attr("id", function(d) {
-            return "pie-" + d.data.symbol;
-        })
-        .attr("transform", "scale(1)")
-        .on("mouseover", function(d) {
-            highlight(d.data);
-        })
-        .on("mouseout", function(d) {
-            unhighlight(d.data);
-        });
-
-    gpie2.append("path")
-        .style("fill", function(d, i) {
-            return colors(d.data.symbol);
-        })
-        .attr("visibility", function(d) {
-            return (d.value === 0) ? "hidden" : "visible";
-        })
-        .each(function(d) {
-            this.current = d;
-        });
-
-    var gpietext2 = svgpie2.selectAll(".pietext")
-        .data(pie2(symbols.map(function(s) {
-            return {
-                symbol: s,
-                p: 1
-            };
-        })), function(d) {
-            return d.data.symbol;
-        })
-        .enter().append("g")
-        .attr("id", function(d) {
-            return "pietext-" + d.data.symbol;
-        })
-        .attr("class", "pietext")
-        .attr("transform", "scale(1)");
-
-    gpietext2.append("path")
-        .attr("visibility", "hidden");
-
-    gpietext2.append("text")
-        .style("text-anchor", "middle");
-
-    svgpie2.append("g").attr("id", "info").selectAll("text")
-        .data(["Annualized return:, ", "Volatility: "]).enter()
-        .append("text")
-        .attr("x", -75)
-        .attr("y", function(d, i) {
-            return 150 + 20 * i;
-        });
     updatePlots();
 }
 
@@ -317,18 +238,8 @@ function updatePlots() {
                 return d.data.symbol;
             });
 
-    var newpie2 = svgpie2.selectAll(".arc")
-        .data(pie2(pos.L).concat(pie2(pos.S)),
-            function(d) {
-                return d.data.symbol;
-            });
-
     newpie.select("path")
         .transition().duration(600).attrTween("d", arcTween);
-
-    newpie2.select("path")
-        .transition().duration(600).attrTween("d", arcTween);
-
 
     svgpie.selectAll(".pietext")
         .data(newpie.data(), function(d) {
@@ -428,53 +339,7 @@ function updatePlots() {
         });
 //copy
 
-    svgpie2.selectAll(".pietext")
-        .data(newpie2.data(), function(d) {
-            return d.data.symbol;
-        })
-        .select("text")
-        .attr("visibility", function(d) {
-            return (d.value === 0) ? "hidden" : "visible";
-        })
-        .attr("transform", function(d) {
-            return "translate(" + ((d.value < 0) ? arcshor : arclong).centroid(d) + ")";
-        })
-        .attr("opacity", 0).transition().duration(600).attr("opacity", 1)
-        .text(function(d) {
-            return d.data.symbol + " " + (d.data.p * 100).toFixed(1) + "%";
-        });
 
-    svgpie2.select("#info").selectAll("text")
-        .data(["Annualized return: " + pos.ret.toFixed(1) + "%",
-            "Volatility: " + pos.vol.toFixed(1) + "%"
-        ])
-        .text(function(d) {
-            return d;
-        });
-
-    svgpie2.selectAll(".pietext")
-        .data(newpie2.data(), function(d) {
-            return d.data.symbol;
-        })
-        .select("text")
-        .attr("visibility", function(d) {
-            return (d.value === 0) ? "hidden" : "visible";
-        })
-        .attr("transform", function(d) {
-            return "translate(" + ((d.value < 0) ? arcshor : arclong).centroid(d) + ")";
-        })
-        .attr("opacity", 0).transition().duration(600).attr("opacity", 1)
-        .text(function(d) {
-            return d.data.symbol + " " + (d.data.p * 100).toFixed(1) + "%";
-        });
-
-    svgpie2.select("#info").selectAll("text")
-        .data(["Annualized return: " + pos.ret.toFixed(1) + "%",
-            "Volatility: " + pos.vol.toFixed(1) + "%"
-        ])
-        .text(function(d) {
-            return d;
-        });
 
     function arcTween(d) {
         var intermediate = d3.interpolate(this.current, d);
@@ -524,8 +389,6 @@ function unhighlight(d) {
 
 function getSelectedSymbols() {
     var s = $("#symbols").val();
-    if ($("#Currency").is(":checked"))
-        s.push("Currency");
     return s;
 }
 
@@ -541,16 +404,12 @@ function fit(init) {
         else
             unused.push(option.value);
     });
-    if ($("#Currency").is(":checked"))
-        dataSubset["Currency"] = data["Currency"].series;
-    else
-        unused.push("Currency");
     $.post("_fit", {
         data: JSON.stringify(dataSubset),
         risk: $("#risk").val(),
         unused: unused.join(","),
-        shor: $("#shor").is(":checked"),
-        maxinvest: $("#maxinvest").val()
+        maxinvest: $("#maxinvest").val(),
+        totinvest: $("#totinvest").val()
     }, function(d) {
         pos = d;
         pos.series = JSON.parse(pos.series);
@@ -579,8 +438,7 @@ function savePos() {
     // Save a portfolio
     var profile = {
         symbols: getSelectedSymbols(),
-        risk: parseFloat($("#risk").val()),
-        l2: parseFloat($("#l2").val())
+        risk: parseFloat($("#risk").val())
     };
     profile.tag = JSON.stringify(profile);
     profile.ret = pos.ret;
@@ -601,7 +459,6 @@ function savePos() {
         .on("click", function(d) {
             $("#symbols").val(d.symbols)
                 .multiselect("refresh");
-            $("#Currency").prop("checked", d.symbols[d.symbols.length - 1] === "Currency")
             $("#risk").val(d.risk);
             fit(false);
         });
@@ -610,9 +467,7 @@ function savePos() {
 
 function getFrontier() {
     // Initialize efficient frontier
-    var dataSubset = {
-        "Currency": data["Currency"].series
-    };
+    var dataSubset = {};
     symbols.forEach(function(symbol) {
         dataSubset[symbol] = data[symbol].series;
     });

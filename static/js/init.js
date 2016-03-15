@@ -5,12 +5,12 @@ var startdate, enddate;
 var dateFormat = d3.time.format("%Y-%m-%d");
 var colors;
 
-var svgtrend, svgfro, svgpie, svgpie2;
+var svgtrend, svgfro, svgpie;
 var width, height;
 var xticks, yticks, fxticks, fyticks;
 var xAxis, yAxis, fxAxis, fyAxis;
 var getLine, getFrontierLine;
-var pie, pie2;
+var pie;
 var arclong, arcshor;
 var animation = false;
 
@@ -27,12 +27,6 @@ $(function() {
     svgpie = d3.select("#piechart")
         .append("svg")
         .attr("id", "svgpie")
-        .append("g")
-        .attr("transform", "translate(220, 210)");
-
-    svgpie2 = d3.select("#piechart2")
-        .append("svg")
-        .attr("id", "svgpie2")
         .append("g")
         .attr("transform", "translate(220, 210)");
 
@@ -68,12 +62,6 @@ $(function() {
         });
 
     pie = d3.layout.pie()
-        .sort(null)
-        .value(function(d) {
-            return d.p;
-        });
-
-    pie2 = d3.layout.pie()
         .sort(null)
         .value(function(d) {
             return d.p;
@@ -156,10 +144,6 @@ $(function() {
         $("#symbols").multiselect("refresh");
     });
 
-    $("#Currency").click(function() {
-        svgtrend.select("#line-Currency").style("visibility", this.checked ? "visible" : "hidden")
-    })
-
     $("#rebalancing")
         .change(function() {
             if (this.value > 0)
@@ -178,7 +162,7 @@ $(function() {
     $("#quote")
         .button().click(function(event) {
             event.preventDefault();
-            if ($("#symbols").val() !== null && $("#symbols").val().length + $("#Currency").is(":checked") > 1) {
+            if ($("#symbols").val() !== null && $("#symbols").val().length) {
                 if (this.value === "Quote") {
                     quote();
                     $("input[type=text]").attr("disabled", "disabled");

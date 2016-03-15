@@ -25,11 +25,14 @@ def _pullData():
 @app.route('/_fit', methods=['POST'])
 def _fitModel():
     risk = float(request.form["risk"])
-    short = request.form["shor"] == "true"
+    totalAmount = float(request.form["totinvest"])
+    maxinvest = float(request.form["maxinvest"])
+    print(totalAmount)
+    print(maxinvest)
     unused = filter(lambda s: len(s) > 0, request.form["unused"].split(","))
     data = getData()
 
-    return getPortfolio(data, unused, risk=risk)
+    return getPortfolio(data, unused, amount=totalAmount,risk=risk, maxP=maxinvest)
 
 @app.route('/_frontier', methods=['POST'])
 def _fitFrontier():
