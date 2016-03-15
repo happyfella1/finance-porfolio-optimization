@@ -9,7 +9,7 @@ idata = pd.DataFrame.from_csv('./static/data/data491.csv')
 
 # set default amount to $1m, default risk = 13%, max percent in a instrument = 5%
 # transaction costs for stocks is $7 per unit
-def getPortfolio(df,unused, lbd,amount = 1000000,risk = 13, startDate ="2015-01-01" ,endDate ="2016-01-01",maxP = 5):
+def getPortfolio(df,unused,amount = 1000000,risk = 13, startDate ="2015-01-01" ,endDate ="2016-01-01",maxP = 5):
     T, k = df.shape
     vol = np.cov((df.iloc[1:, :] / df.shift(1).iloc[1:, :]).T) * df.shape[0]
     ret = (np.array(df.tail(1)) / np.array(df.head(1))).ravel()

@@ -27,10 +27,9 @@ def _fitModel():
     risk = float(request.form["risk"])
     short = request.form["shor"] == "true"
     unused = filter(lambda s: len(s) > 0, request.form["unused"].split(","))
-    l2 = float(request.form["l2"])
     data = getData()
 
-    return getPortfolio(data, unused, risk)
+    return getPortfolio(data, unused, risk=risk)
 
 @app.route('/_frontier', methods=['POST'])
 def _fitFrontier():
