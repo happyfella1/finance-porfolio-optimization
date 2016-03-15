@@ -5,12 +5,12 @@ var startdate, enddate;
 var dateFormat = d3.time.format("%Y-%m-%d");
 var colors;
 
-var svgtrend, svgfro, svgpie;
+var svgtrend, svgfro, svgpie, svgpie2;
 var width, height;
 var xticks, yticks, fxticks, fyticks;
 var xAxis, yAxis, fxAxis, fyAxis;
 var getLine, getFrontierLine;
-var pie;
+var pie, pie2;
 var arclong, arcshor;
 var animation = false;
 
@@ -27,6 +27,12 @@ $(function() {
     svgpie = d3.select("#piechart")
         .append("svg")
         .attr("id", "svgpie")
+        .append("g")
+        .attr("transform", "translate(220, 210)");
+
+    svgpie2 = d3.select("#piechart2")
+        .append("svg")
+        .attr("id", "svgpie2")
         .append("g")
         .attr("transform", "translate(220, 210)");
 
@@ -67,9 +73,15 @@ $(function() {
             return d.p;
         });
 
+    pie2 = d3.layout.pie()
+        .sort(null)
+        .value(function(d) {
+            return d.p;
+        });
+
     arclong = d3.svg.arc()
-        .outerRadius(150)
-        .innerRadius(100);
+        .outerRadius(125)
+        .innerRadius(75);
 
     arcshor = d3.svg.arc()
         .outerRadius(80)
@@ -83,7 +95,7 @@ $(function() {
 $(function() {
     var date = new Date;
     $("#end-date").attr("value", $.datepicker.formatDate("mm/dd/yy", date));
-    date.setMonth(date.getMonth() - 1);
+    date.setMonth(date.getMonth() - 3);
     $("#start-date").attr("value", $.datepicker.formatDate("mm/dd/yy", date));
     $("#start-date").datepicker({
         dataFormat: "mm/dd/yy",
@@ -92,7 +104,7 @@ $(function() {
         maxDate: $("#start-date").attr("value"),
         onClose: function() {
             var date = $("#start-date").datepicker("getDate");
-            date.setMonth(date.getMonth() + 1);
+            date.setMonth(date.getMonth() + 3);
             $("#end-date").datepicker("option", "minDate", date);
         }
     });
@@ -104,7 +116,7 @@ $(function() {
         maxDate: new Date,
         onClose: function() {
             var date = $("#end-date").datepicker("getDate");
-            date.setMonth(date.getMonth() - 1);
+            date.setMonth(date.getMonth() - 3);
             $("#start-date").datepicker("option", "maxDate", date);
         }
     });
@@ -147,7 +159,7 @@ $(function() {
     $("#Currency").click(function() {
         svgtrend.select("#line-Currency").style("visibility", this.checked ? "visible" : "hidden")
     })
-
+    https://www.youtube.com/watch?v=Zm8ISls_TBA
 
     $("#rebalancing")
         .change(function() {
@@ -187,7 +199,7 @@ $(function() {
     $("#reset")
         .button().click(function(event) {
             event.preventDefault();
-            d3.select("#progress").text("Pulling data...");
+            d3.select("#progress").text("Data Extraction Initiated...");
             $("input[type=text]").prop("disabled", false);
             $("input#shor").prop("disabled", false);
             $("input#rate").prop("disabled", false);

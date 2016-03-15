@@ -16,29 +16,34 @@
     <script src="js/init.js"></script>
     <script src="js/visuals.js"></script>
 
-    <title>Portfolio of dream</title>
+    <title>Niggaz with Atitude</title>
 
 </head>
+
+<Title>
+    Niggas
+</Title>
 
 <body>
     <div id="panel">
         From
         <input type="text" id="start-date" autocomplete="off"> 
         To
-        <input type="text" id="end-date" autocomplete="off"> 
-        Add
-        <input type="text" id="ticker" style="width: 70px" autocomplete="off" title="Type to add tickers here">
+        <input type="text" id="end-date" autocomplete="off">
+        Model
+        <select id="model" >
+            <option value="101">Mean absolute Deviation</option>
+            <option value="102">Mean Variance</option>
+        </select>
+
         <select id="symbols" class="multiselect" multiple="multiple" size="1">
         </select>
-        Currency
-        <input type="checkbox" id="Currency" unchecked>
-        <input type="number" id="rate" min="-10" max="10" step="0.01" value="0.01" autocomplete="off" title="Interest rate"> 
-        Short
-        <input type="checkbox" id="shor" autocomplete="off"> 
+        
+        <input type="hidden" id="rate" min="-10" max="10" step="0.01" value="0.01" autocomplete="off" title="Interest rate"> 
         Risk
-        <input type="range" id="risk" min="0" max="1" step="0.1" value="0.5" title="Slide right if you are willing to take more risk."> 
-        Equipartition
-        <input type="range" id="l2" min="0" max="1" step="0.1" value="0.5" title="Slide right to avoid overfitting."> 
+        <input type="number" id="risk"  value="0.10">
+        Max Investment
+        <input type="number" id="maxinvest" min="0.05" max="0.50" value="0.10">
         Rebalancing 
         <select id="rebalancing" autocomplete="off" disabled>
             <option value="0">None</option>
@@ -60,6 +65,9 @@
             </div>
         </div>
         <div id="piechart">
+        </div>
+
+        <div id="piechart2">
         </div>
     </div>
 

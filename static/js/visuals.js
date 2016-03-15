@@ -38,7 +38,7 @@ function quote() {
             if (d === "invalid")
                 invalidSymbol(symbol);
             else {
-                d3.select("#progress").text("Pulling data...(" + symbol + ")");
+                d3.select("#progress").text("Extracting data...(" + symbol + ")");
 
                 data[symbol] = JSON.parse(d.series);
                 data[symbol] = {
@@ -202,9 +202,73 @@ function trendPlot() {
     svgpie.append("g").attr("id", "info").selectAll("text")
         .data(["Annualized return:, ", "Volatility: "]).enter()
         .append("text")
-        .attr("x", -200)
+        .attr("x", -75)
         .attr("y", function(d, i) {
-            return 230 + 20 * i;
+            return 150 + 20 * i;
+        });
+    //copy
+
+    var gpie2 = svgpie2.selectAll(".arc")
+        .data(pie2(symbols.map(function(s) {
+            return {
+                symbol: s,
+                p: 1
+            };
+        })), function(d) {
+            return d.data.symbol;
+        })
+        .enter().append("g")
+        .attr("class", "arc")
+        .attr("id", function(d) {
+            return "pie-" + d.data.symbol;
+        })
+        .attr("transform", "scale(1)")
+        .on("mouseover", function(d) {
+            highlight(d.data);
+        })
+        .on("mouseout", function(d) {
+            unhighlight(d.data);
+        });
+
+    gpie2.append("path")
+        .style("fill", function(d, i) {
+            return colors(d.data.symbol);
+        })
+        .attr("visibility", function(d) {
+            return (d.value === 0) ? "hidden" : "visible";
+        })
+        .each(function(d) {
+            this.current = d;
+        });
+
+    var gpietext2 = svgpie2.selectAll(".pietext")
+        .data(pie2(symbols.map(function(s) {
+            return {
+                symbol: s,
+                p: 1
+            };
+        })), function(d) {
+            return d.data.symbol;
+        })
+        .enter().append("g")
+        .attr("id", function(d) {
+            return "pietext-" + d.data.symbol;
+        })
+        .attr("class", "pietext")
+        .attr("transform", "scale(1)");
+
+    gpietext2.append("path")
+        .attr("visibility", "hidden");
+
+    gpietext2.append("text")
+        .style("text-anchor", "middle");
+
+    svgpie2.append("g").attr("id", "info").selectAll("text")
+        .data(["Annualized return:, ", "Volatility: "]).enter()
+        .append("text")
+        .attr("x", -75)
+        .attr("y", function(d, i) {
+            return 150 + 20 * i;
         });
     updatePlots();
 }
@@ -253,8 +317,18 @@ function updatePlots() {
                 return d.data.symbol;
             });
 
+    var newpie2 = svgpie2.selectAll(".arc")
+        .data(pie2(pos.L).concat(pie2(pos.S)),
+            function(d) {
+                return d.data.symbol;
+            });
+
     newpie.select("path")
         .transition().duration(600).attrTween("d", arcTween);
+
+    newpie2.select("path")
+        .transition().duration(600).attrTween("d", arcTween);
+
 
     svgpie.selectAll(".pietext")
         .data(newpie.data(), function(d) {
@@ -273,6 +347,128 @@ function updatePlots() {
         });
 
     svgpie.select("#info").selectAll("text")
+        .data(["Annualized return: " + pos.ret.toFixed(1) + "%",
+            "Volatility: " + pos.vol.toFixed(1) + "%"
+        ])
+        .text(function(d) {
+            return d;
+        });
+
+    svgpie.selectAll(".pietext")
+        .data(newpie.data(), function(d) {
+            return d.data.symbol;
+        })
+        .select("text")
+        .attr("visibility", function(d) {
+            return (d.value === 0) ? "hidden" : "visible";
+        })
+        .attr("transform", function(d) {
+            return "translate(" + ((d.value < 0) ? arcshor : arclong).centroid(d) + ")";
+        })
+        .attr("opacity", 0).transition().duration(600).attr("opacity", 1)
+        .text(function(d) {
+            return d.data.symbol + " " + (d.data.p * 100).toFixed(1) + "%";
+        });
+
+    svgpie.select("#info").selectAll("text")
+        .data(["Annualized return: " + pos.ret.toFixed(1) + "%",
+            "Volatility: " + pos.vol.toFixed(1) + "%"
+        ])
+        .text(function(d) {
+            return d;
+        });
+
+
+    svgpie.selectAll(".pietext")
+        .data(newpie.data(), function(d) {
+            return d.data.symbol;
+        })
+        .select("text")
+        .attr("visibility", function(d) {
+            return (d.value === 0) ? "hidden" : "visible";
+        })
+        .attr("transform", function(d) {
+            return "translate(" + ((d.value < 0) ? arcshor : arclong).centroid(d) + ")";
+        })
+        .attr("opacity", 0).transition().duration(600).attr("opacity", 1)
+        .text(function(d) {
+            return d.data.symbol + " " + (d.data.p * 100).toFixed(1) + "%";
+        });
+
+    svgpie.select("#info").selectAll("text")
+        .data(["Annualized return: " + pos.ret.toFixed(1) + "%",
+            "Volatility: " + pos.vol.toFixed(1) + "%"
+        ])
+        .text(function(d) {
+            return d;
+        });
+
+    svgpie.selectAll(".pietext")
+        .data(newpie.data(), function(d) {
+            return d.data.symbol;
+        })
+        .select("text")
+        .attr("visibility", function(d) {
+            return (d.value === 0) ? "hidden" : "visible";
+        })
+        .attr("transform", function(d) {
+            return "translate(" + ((d.value < 0) ? arcshor : arclong).centroid(d) + ")";
+        })
+        .attr("opacity", 0).transition().duration(600).attr("opacity", 1)
+        .text(function(d) {
+            return d.data.symbol + " " + (d.data.p * 100).toFixed(1) + "%";
+        });
+
+    svgpie.select("#info").selectAll("text")
+        .data(["Annualized return: " + pos.ret.toFixed(1) + "%",
+            "Volatility: " + pos.vol.toFixed(1) + "%"
+        ])
+        .text(function(d) {
+            return d;
+        });
+//copy
+
+    svgpie2.selectAll(".pietext")
+        .data(newpie2.data(), function(d) {
+            return d.data.symbol;
+        })
+        .select("text")
+        .attr("visibility", function(d) {
+            return (d.value === 0) ? "hidden" : "visible";
+        })
+        .attr("transform", function(d) {
+            return "translate(" + ((d.value < 0) ? arcshor : arclong).centroid(d) + ")";
+        })
+        .attr("opacity", 0).transition().duration(600).attr("opacity", 1)
+        .text(function(d) {
+            return d.data.symbol + " " + (d.data.p * 100).toFixed(1) + "%";
+        });
+
+    svgpie2.select("#info").selectAll("text")
+        .data(["Annualized return: " + pos.ret.toFixed(1) + "%",
+            "Volatility: " + pos.vol.toFixed(1) + "%"
+        ])
+        .text(function(d) {
+            return d;
+        });
+
+    svgpie2.selectAll(".pietext")
+        .data(newpie2.data(), function(d) {
+            return d.data.symbol;
+        })
+        .select("text")
+        .attr("visibility", function(d) {
+            return (d.value === 0) ? "hidden" : "visible";
+        })
+        .attr("transform", function(d) {
+            return "translate(" + ((d.value < 0) ? arcshor : arclong).centroid(d) + ")";
+        })
+        .attr("opacity", 0).transition().duration(600).attr("opacity", 1)
+        .text(function(d) {
+            return d.data.symbol + " " + (d.data.p * 100).toFixed(1) + "%";
+        });
+
+    svgpie2.select("#info").selectAll("text")
         .data(["Annualized return: " + pos.ret.toFixed(1) + "%",
             "Volatility: " + pos.vol.toFixed(1) + "%"
         ])
@@ -354,7 +550,7 @@ function fit(init) {
         risk: $("#risk").val(),
         unused: unused.join(","),
         shor: $("#shor").is(":checked"),
-        l2: $("#l2").val()
+        maxinvest: $("#maxinvest").val()
     }, function(d) {
         pos = d;
         pos.series = JSON.parse(pos.series);
@@ -407,7 +603,6 @@ function savePos() {
                 .multiselect("refresh");
             $("#Currency").prop("checked", d.symbols[d.symbols.length - 1] === "Currency")
             $("#risk").val(d.risk);
-            $("#l2").val(d.l2);
             fit(false);
         });
 

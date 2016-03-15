@@ -34,9 +34,19 @@ div.plot {
 div#piechart {
     width: 435px;
     height: 590px;
-    border: 1px solid lightgrey;
+    margin: 10px 0 0 0;
     font-size-adjust: 0.45;
     float: right;
+    margin-top: -95px;
+}
+
+div#piechart2 {
+    width: 435px;
+    height: 590px;
+    font-size-adjust: 0.45;
+    float: right;
+    clear:right;
+    margin-top: -280px;
 }
 
 div#loading {
@@ -48,8 +58,8 @@ div#loading {
     height: 100%;
     padding-top: 20%;
     text-align: center;
-    background: #000000;
-    opacity: 0.5;
+    background: #000001;
+    opacity: 0.9;
     cursor: wait;
     display: none;
 }
@@ -63,6 +73,12 @@ svg#svgpie {
     width: 430;
     height: 550;
 }
+
+svg#svgpie2 {
+    width: 430;
+    height: 550;
+}
+
 
 path.line { fill: none; }
 
