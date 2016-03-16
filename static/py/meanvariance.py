@@ -9,7 +9,9 @@ from math import sqrt
 from datetime import datetime
 from flask import jsonify, request
 
-idata = pd.DataFrame.from_csv('./static/data/stocks.csv')
+stocks = pd.DataFrame.from_csv('./static/data/stocks.csv')
+etfs = pd.DataFrame.from_csv('./static/data/etfs.csv')
+bonds = pd.DataFrame.from_csv('./static/data/bonds.csv')
 
 def getPortfolio1(df, unused, amount = 1000000,risk = 13, maxP = 5):
     print("Using mean variance for risk calculations")
@@ -17,36 +19,49 @@ def getPortfolio1(df, unused, amount = 1000000,risk = 13, maxP = 5):
     vol = np.cov((df.iloc[1:, :] / df.shift(1).iloc[1:, :]).T) * df.shape[0]
     ret = (np.array(df.tail(1)) / np.array(df.head(1))).ravel()
 
-    df = df.pct_change()[1:]
+    data = df.pct_change()[1:]
+    total_means = data.mean().values
+    syms = data.columns
     sigma = df.cov()
-    stats = pd.concat((df.mean(),df.std(),(df+1).prod()-1),axis=1)
-    stats.columns = ['Mean_return', 'Volatility', 'Total_return']
-    growth = (df+1.0).cumprod()
-    tx = growth.index
-    syms = growth.columns
     # Instantiate our model
     m = Model("portfolio")
+    portsyms =[]
+    etfsyms= []
+    bondsyms= []
+    for sym in syms:
+        if sym[:3] == 'ETF':
+            etfsyms.append(sym)
+        elif sym[:3] == 'BND':
+            bondsyms.append(sym)
+        else:
+            portsyms.append(sym)
+    portvars = [m.addVar(name=symb,lb=0.0) for symb in portsyms]
+    portvars = pd.Series(portvars,index=portsyms)
+    etfvars = [m.addVar(name=symb,lb=0.0) for symb in etfsyms]
+    etfvars = pd.Series(etfvars,index=etfsyms)
+    bondvars = [m.addVar(name=symb,lb=0.0) for symb in bondsyms]
+    bondvars = pd.Series(bondvars,index=bondsyms)
     # Create one variable for each stock
-    portvars = [m.addVar(name=symb,lb=0.0) for symb in syms]
-    portvars = pd.Series(portvars, index=syms)
-    portfolio = pd.DataFrame({'Variables':portvars})
+
+    allvars = pd.concat([portvars,etfvars,bondvars]).sort_index()
+    portfolio = pd.DataFrame({'Variables': allvars})
     m.update()
 
     # The total budget
-    p_total = portvars.sum()
+    p_total = allvars.sum()
 
     # The mean return for the portfolio
-    p_return = stats['Mean_return'].dot(portvars)
+    p_return = total_means.dot(allvars)
 
     # The (squared) volatility of the portfolio
-    p_risk = sigma.dot(portvars).dot(portvars)
+    p_risk = sigma.dot(allvars).dot(allvars)
 
 
-    for portvar in portvars:
-        m.addConstr(portvar, GRB.LESS_EQUAL, 0.05 *amount)
+    for var in allvars:
+        m.addConstr(var, GRB.LESS_EQUAL, 0.05 *amount)
     m.setObjective(p_return,GRB.MAXIMIZE)
 
-    m.addConstr(p_risk,GRB.LESS_EQUAL, 0.01 * risk * amount * 1000000000 )
+    m.addConstr(p_risk,GRB.LESS_EQUAL, 0.01 * risk * amount * 100000 )
     # m.addConstr(p_risk,GRB.LESS_EQUAL, 0.13 *amount)
     # Fix the budget
     m.addConstr(p_total, GRB.EQUAL, 1000000)
@@ -54,9 +69,9 @@ def getPortfolio1(df, unused, amount = 1000000,risk = 13, maxP = 5):
 
     m.optimize()
 
-    portfolio['Minimum risk'] = portvars.apply(lambda x:x.getAttr('x'))
+    portfolio['stocks'] = allvars.apply(lambda x:x.getAttr('x'))
 
-    pos = portfolio['Minimum risk'].as_matrix()
+    pos = portfolio['stocks'].as_matrix()
     pos[np.isclose(pos, 0, atol=1e-3)] = 0
     pos /= np.sum(pos)
     df["pos"] = df.dot(pos)
@@ -72,7 +87,6 @@ def getPortfolio1(df, unused, amount = 1000000,risk = 13, maxP = 5):
 
     for i, p in enumerate(pos):
         allocation[category(p)].append({ "symbol": df.columns[i], "p": p })
-
 
     allocation["ret"] = (ret.dot(pos) ** ( 365.0 / T ) - 1) * 100
 
@@ -165,7 +179,8 @@ def pullDataFromYahoo1(symbol, startdate, enddate):
     dates = pd.DatetimeIndex(start=startdate, end=enddate, freq='1d')
     data = pd.DataFrame(index=dates)
     try:
-        tmp = idata[symbol][startdate:enddate]
+        concatIns = pd.concat([stocks,etfs,bonds],axis=1)
+        tmp = concatIns[symbol][startdate:enddate]
         tmp = tmp.to_frame()
         data["value"] = tmp[symbol]
         data = data.interpolate().ffill().bfill()
