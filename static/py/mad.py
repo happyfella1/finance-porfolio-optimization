@@ -5,7 +5,8 @@ from gurobipy import *
 import datetime as dt
 from flask import jsonify, request
 
-idata = pd.DataFrame.from_csv('./static/data/data491.csv')
+stocks = pd.DataFrame.from_csv('./static/data/stocks.csv')
+etfs = pd.DataFrame.from_csv('./static/data/etfs.csv')
 
 # set default amount to $1m, default risk = 13%, max percent in a instrument = 5%
 # transaction costs for stocks is $7 per unit
@@ -16,7 +17,6 @@ def getPortfolio(df,unused,amount = 1000000,risk = 13, maxP = 5):
     ret = (np.array(df.tail(1)) / np.array(df.head(1))).ravel()
 
     data = df.pct_change()[1:]
-    # print data
     periodicMeans = pd.groupby(data,by=[data.index.month]).mean()
     timePeriods = periodicMeans.index
     total_means = data.mean().values
@@ -41,8 +41,6 @@ def getPortfolio(df,unused,amount = 1000000,risk = 13, maxP = 5):
     m.setObjective(p_return,GRB.MAXIMIZE)
     m.addConstr(p_total_port,GRB.EQUAL,amount)
     # MAD constraints
-    # w is the risk constant for mad, 35.2 % volatility = 2.89 % w =>  w = risk/ 35.2 * 2.89 (this value is deduced by comparing mean variance)
-    # w = risk * 2.89 / 35.2
     w = risk
 
     m.addConstr(timevars.sum(),GRB.LESS_EQUAL,w*amount*0.01/2)
@@ -81,7 +79,7 @@ def getPortfolio(df,unused,amount = 1000000,risk = 13, maxP = 5):
     return jsonify(allocation)
 
 def getPortfolioValue(portfolio,startDate="2016-01-01",endDate="2016-03-10"):
-    data = idata
+    data = stocks
     start = dt.datetime.strptime(startDate, "%Y-%m-%d").date()
     end = dt.datetime.strptime(endDate, "%Y-%m-%d").date()
     returnsData = data.pct_change()[1:]
@@ -89,10 +87,33 @@ def getPortfolioValue(portfolio,startDate="2016-01-01",endDate="2016-03-10"):
     ret_index = (1+returns_for_dates).cumprod()
     return int(ret_index.tail(1).dot(portfolio['stocks'].as_matrix()))
 
+def getRebalance(df, freq, pos):
+    reweight = df.groupby(pd.Grouper(freq=freq)).head(1)
+    print reweight
+    p = pos.copy()
+    print p
+    for idx, row in reweight.iterrows():
+        p = pos / row * row.dot(p)
+        reweight.loc[idx, :] = np.array(p)
+
+    perf = df.groupby(pd.Grouper(freq=freq)).apply(lambda x: x.dot(reweight.loc[x.index[0], :])).to_frame()
+    perf.index = perf.index.droplevel(0)
+    perf = perf.reset_index()
+    perf["index"] = perf["index"].map(lambda d: str(d.date()))
+    perf.columns = ["date", "value"]
+    dailyret = np.array(perf["value"])
+    dailyret = dailyret[1:] / dailyret[:-1]
+
+    return jsonify({ "min": perf["value"].min(),
+                     "max": perf["value"].max(),
+                     "ret": (perf["value"].iloc[-1] ** (365.0 / perf["value"].size) - 1) * 100,
+                     "vol": np.std(dailyret) * 1910.5,
+                     "series": perf.T.to_json() })
+
 def rebalance(oldPortfolio,amount,risk = 13,expectedR = 0, maxP = 5, startDate = "2015-01-01", endDate = "2016-03-10"):
     start = dt.datetime.strptime(startDate, "%Y-%m-%d").date()
     end = dt.datetime.strptime(endDate, "%Y-%m-%d").date()
-    dataR = idata[start:end]
+    dataR = stocks[start:end]
     closingPrices = dataR.tail(1)
     returnsData = dataR.pct_change()[1:]
     data = returnsData
@@ -176,70 +197,6 @@ def rebalance(oldPortfolio,amount,risk = 13,expectedR = 0, maxP = 5, startDate =
 
     return portfolio
 
-# def getFrontier(df, short):
-#     T, k = df.shape
-#
-#     vol = np.cov((df.iloc[1:, :] / df.shift(1).iloc[1:, :]).T) * df.shape[0]
-#     ret = (np.array(df.tail(1)) / np.array(df.head(1))).ravel()
-#
-#     sigma = df.cov()
-#     stats = pd.concat((df.mean(),df.std(),(df+1).prod()-1),axis=1)
-#     stats.columns = ['Mean_return', 'Volatility', 'Total_return']
-#
-#     extremes = pd.concat((stats.idxmin(),stats.min(),stats.idxmax(),stats.max()),axis=1)
-#     extremes.columns = ['Minimizer','Minimum','Maximizer','Maximum']
-#     growth = (df+1.0).cumprod()
-#     tx = growth.index
-#     syms = growth.columns
-#     # Instantiate our model
-#     m = Model("portfolio")
-#
-#     m.setParam('OutputFlag',False)
-#
-#     # Create one variable for each stock
-#     portvars = [m.addVar(name=symb,lb=0.0) for symb in syms]
-#     portvars = pd.Series(portvars, index=syms)
-#     portfolio = pd.DataFrame({'Variables':portvars})
-#     m.update()
-#
-#     # The total budget
-#     p_total = portvars.sum()
-#
-#     # The mean return for the portfolio
-#     p_return = stats['Mean_return'].dot(portvars)
-#
-#     # The (squared) volatility of the portfolio
-#     p_risk = sigma.dot(portvars).dot(portvars)
-#
-#     m.setObjective(p_risk,GRB.MINIMIZE)
-#
-#     # Fix the budget
-#     m.addConstr(p_total, GRB.EQUAL, 1)
-#
-#     m.setParam('Method',1)
-#
-#     frontier = {}
-#     fixedreturn = m.addConstr(p_return, GRB.EQUAL, 10)
-#     m.update()
-#
-#     # Determine the range of returns. Make sure to include the lowest-risk
-#     # portfolio in the list of options
-#     minret = extremes.loc['Mean_return','Minimum']
-#     maxret = extremes.loc['Mean_return','Maximum']
-#     riskret = extremes.loc['Volatility','Minimizer']
-#     riskret = stats.loc[riskret,'Mean_return']
-#     returns = np.unique(np.hstack((np.linspace(minret,maxret,100),riskret)))
-#
-#     # Iterate through all returns
-#     risks = returns.copy()
-#     for i, alpha in enumerate(returns):
-#         fixedreturn.rhs = returns[i]
-#         m.optimize()
-#         pos = portvars.apply(lambda x:x.getAttr('x')).as_matrix()
-#         frontier[i] = { "ret": returns[i],
-#                         "vol": sqrt(p_risk.getValue())}
-#     return jsonify(frontier)
-
 def getFrontier(df, short):
     T, k = df.shape
 
@@ -317,7 +274,8 @@ def pullDataFromYahoo(symbol, startdate, enddate):
     dates = pd.DatetimeIndex(start=startdate, end=enddate, freq='1d')
     data = pd.DataFrame(index=dates)
     try:
-        tmp = idata[symbol][startdate:enddate]
+        concatIns = pd.concat([stocks,etfs],axis=1)
+        tmp = concatIns[symbol][startdate:enddate]
         tmp = tmp.to_frame()
         data["value"] = tmp[symbol]
         data = data.interpolate().ffill().bfill()

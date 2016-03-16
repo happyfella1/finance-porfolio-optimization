@@ -185,9 +185,9 @@ function trendPlot() {
     svgpie.append("g").attr("id", "info").selectAll("text")
         .data(["Annualized return:, ", "Volatility: "]).enter()
         .append("text")
-        .attr("x", -75)
+        .attr("x", -200)
         .attr("y", function(d, i) {
-            return 150 + 20 * i;
+            return 230 + 20 * i;
         });
     //copy
 

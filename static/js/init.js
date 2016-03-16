@@ -68,8 +68,8 @@ $(function() {
         });
 
     arclong = d3.svg.arc()
-        .outerRadius(125)
-        .innerRadius(75);
+        .outerRadius(150)
+        .innerRadius(100);
 
     arcshor = d3.svg.arc()
         .outerRadius(80)
@@ -178,23 +178,8 @@ $(function() {
                 }
             } else
                 alert("Please select at least two stocks or one stock and cash.");
-
         });
 
-    $("#reset")
-        .button().click(function(event) {
-            event.preventDefault();
-            d3.select("#progress").text("Data Extraction Initiated...");
-            $("input[type=text]").prop("disabled", false);
-            $("input#shor").prop("disabled", false);
-            $("input#rate").prop("disabled", false);
-            $("select#rebalancing").prop("disabled", true)
-            $("#quote").attr("value", "Quote");
-            $("#symbols").empty().multiselect("refresh");
-            data = new Object;
-            d3.selectAll("g").html("");
-
-        });
 
     $(".ui-widget").css("font-size", "12px");
 

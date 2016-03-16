@@ -9,7 +9,7 @@ from math import sqrt
 from datetime import datetime
 from flask import jsonify, request
 
-idata = pd.DataFrame.from_csv('./static/data/data491.csv')
+idata = pd.DataFrame.from_csv('./static/data/stocks.csv')
 
 def getPortfolio1(df, unused, amount = 1000000,risk = 13, maxP = 5):
     print("Using mean variance for risk calculations")
@@ -46,7 +46,7 @@ def getPortfolio1(df, unused, amount = 1000000,risk = 13, maxP = 5):
         m.addConstr(portvar, GRB.LESS_EQUAL, 0.05 *amount)
     m.setObjective(p_return,GRB.MAXIMIZE)
 
-    m.addConstr(p_risk,GRB.LESS_EQUAL, 0.01 * risk * amount )
+    m.addConstr(p_risk,GRB.LESS_EQUAL, 0.01 * risk * amount * 1000000000 )
     # m.addConstr(p_risk,GRB.LESS_EQUAL, 0.13 *amount)
     # Fix the budget
     m.addConstr(p_total, GRB.EQUAL, 1000000)

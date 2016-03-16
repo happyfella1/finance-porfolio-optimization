@@ -6,7 +6,7 @@ from datetime import datetime
 from flask import Flask, render_template, request
 
 from static.py.meanvariance import getData1, getPortfolio1, getFrontier1, getRebalance1, pullDataFromYahoo1
-from static.py.mad import getData, getPortfolio, getFrontier, pullDataFromYahoo
+from static.py.mad import getData, getPortfolio, getFrontier, getRebalance,pullDataFromYahoo
 
 app = Flask(__name__, static_folder='static', static_url_path='')
 
