@@ -16,7 +16,7 @@
  * Click red circles in the panel of "efficient frontier" to get constructed portfolios.
 
 3. Yet to be done
- * Include transaction constraints
+ * Get proper transaction costs
  * Include Tax constraints
- * Store the data in a db or file system
- * Rebalancing the portfolio
+ * Store the data in a database
+ * Rebalancing with proper transaction cost

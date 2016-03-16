@@ -7,8 +7,9 @@ from flask import jsonify, request
 
 stocks = pd.DataFrame.from_csv('./static/data/stocks.csv')
 etfs = pd.DataFrame.from_csv('./static/data/etfs.csv')
+bonds = pd.DataFrame.from_csv('./static/data/bonds.csv')
 
-# set default amount to $1m, default risk = 13%, max percent in a instrument = 5%
+# set default amount to $1m, default risk = 13% which corresponds to 0.5 of risk constant in MAD, max percent in a instrument = 5%
 # transaction costs for stocks is $7 per unit
 def getPortfolio(df,unused,amount = 1000000,risk = 13, maxP = 5):
     print("Using mean absolute deviation for risk calculations")
@@ -21,38 +22,57 @@ def getPortfolio(df,unused,amount = 1000000,risk = 13, maxP = 5):
     timePeriods = periodicMeans.index
     total_means = data.mean().values
     syms = data.columns
-
     m = Model("portfolio")
-    portvars = [m.addVar(name=sym,lb=0.0) for sym in syms]
-    portvars = pd.Series(portvars,index=syms)
+    portsyms =[]
+    etfsyms= []
+    bondsyms= []
+    for sym in syms:
+        if sym[:3] == 'ETF':
+            etfsyms.append(sym)
+        elif sym[:3] == 'BND':
+            bondsyms.append(sym)
+        else:
+            portsyms.append(sym)
+    portvars = [m.addVar(name=symb,lb=0.0) for symb in portsyms]
+    portvars = pd.Series(portvars,index=portsyms)
+    etfvars = [m.addVar(name=symb,lb=0.0) for symb in etfsyms]
+    etfvars = pd.Series(etfvars,index=etfsyms)
+    bondvars = [m.addVar(name=symb,lb=0.0) for symb in bondsyms]
+    bondvars = pd.Series(bondvars,index=bondsyms)
     # Define new variables to implement Mean Absolute Deviation for risk calculation
 
     timevars = [m.addVar(name=str(t),lb=0.0) for t in timePeriods]
     timevars = pd.Series(timevars,index=timePeriods)
 
-    allvars = portvars
+    allvars = pd.concat([portvars,etfvars,bondvars]).sort_index()
     portfolio = pd.DataFrame({'Variables': allvars})
     m.update()
 
-    p_total_port = portvars.sum()
-    p_return = total_means.dot(portvars)
+    p_total_port = allvars.sum()
+    p_return = total_means.dot(allvars)
 
 
     m.setObjective(p_return,GRB.MAXIMIZE)
     m.addConstr(p_total_port,GRB.EQUAL,amount)
+    # max of 5% in etfs
+    m.addConstr(etfvars.sum(),GRB.LESS_EQUAL,amount*0.05)
+    # minimum of 10 % in bonds
+    m.addConstr(bondvars.sum(),GRB.GREATER_EQUAL,amount*0.10)
     # MAD constraints
     w = risk
 
     m.addConstr(timevars.sum(),GRB.LESS_EQUAL,w*amount*0.01/2)
     for index, row in periodicMeans.iterrows():
-        m.addConstr(timevars[index],GRB.GREATER_EQUAL,(row-total_means).dot(portvars))
-    for var in portvars:
+        m.addConstr(timevars[index],GRB.GREATER_EQUAL,(row-total_means).dot(allvars))
+    for var in allvars:
         m.addConstr(var,GRB.LESS_EQUAL,amount/100*maxP)
+
+
     m.update()
     m.optimize()
 
-    # print(portfolio)
-    portfolio['stocks'] = portvars.apply(lambda x:x.getAttr('x'))
+    portfolio['stocks'] = allvars.apply(lambda x:x.getAttr('x'))
+
     pos = portfolio['stocks'].as_matrix()
     pos[np.isclose(pos, 0, atol=1e-3)] = 0
     pos /= np.sum(pos)
@@ -89,9 +109,7 @@ def getPortfolioValue(portfolio,startDate="2016-01-01",endDate="2016-03-10"):
 
 def getRebalance(df, freq, pos):
     reweight = df.groupby(pd.Grouper(freq=freq)).head(1)
-    print reweight
     p = pos.copy()
-    print p
     for idx, row in reweight.iterrows():
         p = pos / row * row.dot(p)
         reweight.loc[idx, :] = np.array(p)
@@ -274,7 +292,7 @@ def pullDataFromYahoo(symbol, startdate, enddate):
     dates = pd.DatetimeIndex(start=startdate, end=enddate, freq='1d')
     data = pd.DataFrame(index=dates)
     try:
-        concatIns = pd.concat([stocks,etfs],axis=1)
+        concatIns = pd.concat([stocks,etfs,bonds],axis=1)
         tmp = concatIns[symbol][startdate:enddate]
         tmp = tmp.to_frame()
         data["value"] = tmp[symbol]

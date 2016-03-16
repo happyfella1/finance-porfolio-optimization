@@ -166,11 +166,9 @@ $(function() {
                 if (this.value === "Quote") {
                     quote();
                     $("input[type=text]").attr("disabled", "disabled");
-                    $("input#rate").attr("disabled", "disabled");
-                    $("input#shor").attr("disabled", "disabled");
-                    $("input#totinvest").attr("disabled", "disabled");
-                    $("input#maxinvest").attr("disabled", "disabled");
                     $("select#rebalancing").prop("disabled", false);
+                    $("input#totinvest").attr("disabled", false);
+                    $("input#maxinvest").attr("disabled", false);
                     $("#quote").attr("value", "Fit");
                 } else {
                     $("select#rebalancing").val(0);
