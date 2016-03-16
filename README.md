@@ -6,7 +6,7 @@
  * Flask 0.10.1
  * Numpy 1.9.2
  * Pandas 0.16.2
- * gurobi 6.5.0
+ * gurobi 6.5.0 (License is needed)
 
 2. Get started
  * Run "python index.py" in terminal.
